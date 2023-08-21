@@ -1,0 +1,54 @@
+###deploy static webpage to s3 using github actions
+
+1) Create a github repository and push your code to it ( if U dont have a webpage, U can download sample webpages from https://startbootstrap.com/)
+2) Create a S3 bucket
+    i) Click on bucket name --> Permissions --> Edit Block public access --> Uncheck block all public access --> Save changes --> Confirm
+    ii)Click on bucket name --> Properties --> Static web hosting --> Edit --> Give Enable (for Static website hosting) --> Host a static webpage(Hosting type) --> index.html(Index document) --> Save changes ( You will get an endpoint url which can be used to access the webpage)
+    iii)Click on bucket name --> Permissions --> Edit Bucket Policy and paste this 
+     {
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "PublicReadGetObject",
+            "Effect": "Allow",
+            "Principal": "*",
+            "Action": "s3:GetObject",
+            "Resource": "arn:aws:s3:::bucketname-webpage/*"
+        }
+    ]
+} 
+
+3) Create an IAM user with s3 full access and copy secret access key and access key
+4) Create two secrets in github repository ACCESS_KEY and AWS_SECRET_ACCESS_KEY 
+(Go to git repository --> Settings --> Sectrets and variables --> Actions -->New repository secret --> Name: ACCESS_KEY --> Secret: access key value)
+(Go to git repository --> Settings --> Sectrets and variables --> Actions -->New repository secret --> Name: SECRET_ACCESS_KEY --> Secret: secret access key value)
+5) Create your workflow ( git repo --> actions --> create workflow)
+eg:
+
+name: Upload Webpage to s3 
+on:
+  push:
+    branches:
+    - master
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v1
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ap-southeast-1   // ur s3 region 
+
+    - name: Deploy static site to S3 bucket
+      run: aws s3 sync ./folder/ s3://bucketname-webpage --delete   //( in place of folder, give the name of the folder containing all ur files in github repo .. if ur files are present directly without any folder give ./ )
+
+
+You can access the webpage by using the endpoint url under static webpage hosting
+
+
+ 
